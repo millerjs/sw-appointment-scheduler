@@ -23,16 +23,30 @@ class School(object):
     def __init__(self):
         self.groups = {}
 
-    def get_group(self, name, grade, minutes):
+    def get_group(self, name, minutes):
+        """Looks up a group or creates one if it doesn't exist
+
+        '"""
         if name not in self.groups:
-            self.groups[name] = Group(self, name, grade, minutes)
+            self.groups[name] = Group(self, name, minutes)
+
+        assert self.groups[name].minutes == minutes, (
+            "Two different 'minutes' provided for '{}', {}w != {}w"
+        ).format(name, self.groups[name].minutes, minutes)
+
         return self.groups[name]
+
+    def get_period_interval(self, day, period, data):
+        """Must be implemented by subclasses"""
+        raise NotImplementedError()
 
 
 class HighSchool(School):
 
-    def get_period_interval(self, day, period, data):
+    def get_period_interval(self, day, period, data=None):
+        """Lookup the interval given a day and period
 
+        """
         # Highschool
         if day.lower() in ['m', 't', 'th', 'f']:
             return {
@@ -65,6 +79,9 @@ class HighSchool(School):
 class MiddleSchool(School):
 
     def get_period_interval(self, day, period, data):
+        """Lookup the interval given a day and period
+
+        """
 
         # Middle School M/T/Th/F
         if day.lower() in ['m', 't', 'th', 'f']:
@@ -89,13 +106,18 @@ class MiddleSchool(School):
 
 class Group(object):
 
-    def __init__(self, school, name, grade, minutes):
+    def __init__(self, school, name, minutes):
+        """Create a group in a school with given name and number of minutes.
+
+        """
         self.name = name
-        self.grade = grade
         self.school = school
         self.minutes = minutes
         self.options = []
         self.students = []
+
+    def __repr__(self):
+        return "<Group('{}')>".format(self.name)
 
 
 class Student(object):
@@ -116,7 +138,7 @@ class Student(object):
         school = schools[grade]
         if group_m:
             group_name = group_m.group(1)
-            group = school.get_group(group_name, grade, minutes)
+            group = school.get_group(group_name, minutes)
         else:
             group = None
 
@@ -130,12 +152,15 @@ class Student(object):
         return student
 
     def __init__(self, school, group, name, grade, minutes):
-        self.group = None
+        self.group = group
         self.name = name
         self.grade = grade
         self.school = school
         self.minutes = minutes
         self.options = []
+
+        if self.group:
+            self.group.students.append(self)
 
     def __repr__(self):
         return "<Student('{}', grade={}, group={})>".format(
@@ -177,8 +202,11 @@ class Day(object):
         self.booked.add(interval)
 
     def dumps(self):
+        dump = ''
         for iv in sorted(self.booked):
-            print "\t{} - {}\t{}".format(m2t(iv.begin), m2t(iv.end), iv.data)
+            dump += "\t{} - {}\t{}\n".format(
+                m2t(iv.begin), m2t(iv.end), iv.data)
+        return dump
 
 
 class Worker(object):
@@ -190,27 +218,61 @@ class Worker(object):
         self.granularity = granularity
         self.days = {d: Day(start_time, end_time, dt) for d in self._d}
 
-    def dump(self):
+    def dumps(self):
+        dump = ""
         for day in self._d:
-            print day
-            self.days[day].dumps()
+            dump += str(day) + '\n'
+            dump += self.days[day].dumps()
+        return dump
 
     def next_avail_within(self, duration, day, req, data=None):
         for interval in self.days[day].free:
             if interval.contains_interval(req):
                 return get_iv(req.begin, req.begin + duration, data)
 
-    def sched_student(self, student):
-        if student.minutes == 0:
-            return
+    def _schedule(self, schedulable, options):
 
-        for interval in student.options:
+        for interval in options:
             avail = self.next_avail_within(
-                student.minutes, interval.data, interval, student)
+                schedulable.minutes, interval.data, interval, schedulable)
             if avail:
                 return self.days[interval.data].schedule(avail)
 
-        self.dump()
         raise OverBookedError(
-            'Could not book {} given options {}'
-            .format(student, student.options))
+            'Could not book {} given options {}: existing schedule:\n{}'
+            .format(schedulable, options, self.dumps()))
+
+    def sched_student(self, student):
+        if student.minutes == 0:
+            return
+        self._schedule(student, student.options)
+
+    def sched_group(self, group):
+        if group.minutes == 0:
+            return
+
+        # Check the group has students
+        assert group.students, "'{}' has no students".format(group)
+        # Check the students are all in the same school
+        assert len(set(student.school for student in group.students)) == 1,\
+            "Group '{}' contains students from different schools".format(group)
+
+        options = set(group.students[0].options)
+        for student in group.students[1:]:
+            options = options.intersection(set(student.options))
+        assert options, "Group '{}' has no options in common!".format(group)
+
+        # Try to schedule the group
+        self._schedule(group, options)
+
+    def schedule(self, students):
+        # Gather the groups
+        groups = {student.group for student in students if student.group}
+        # Schedule the groups first
+        map(self.sched_group, groups)
+        # Drop the students who are in groups
+        students = [student for student in students if not student.group]
+        # Schedule the students
+        map(self.sched_student, students)
+        # Print the schedule
+        print self.dumps()

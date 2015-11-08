@@ -11,7 +11,7 @@ def parse_students(doc):
     reader = csv.DictReader(f, delimiter=',')
     students = []
     hs, ms = HighSchool(), MiddleSchool()
-    schools = [ms for i in range(8)] + [hs for i in range(4)]
+    schools = [ms for i in range(9)] + [hs for i in range(4)]
     for row in reader:
         try:
             students.append(Student.from_row(schools, row))
@@ -25,5 +25,4 @@ if __name__ == "__main__":
     with open('/Users/jmiller/Desktop/students.csv', 'r') as f:
         students = parse_students(f.read())
     worker = Worker()
-    map(worker.sched_student, students)
-    worker.dump()
+    worker.schedule(students)
