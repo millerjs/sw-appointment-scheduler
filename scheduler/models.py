@@ -88,6 +88,9 @@ class MiddleSchool(School):
 
         """
 
+        if isinstance(period, (str, unicode)) and period.lower() == 'lunch':
+            return get_iv('11:00', '12:00', data=data),
+
         # Middle School M/T/Th/F
         if day.lower() in ['m', 't', 'th', 'f']:
             return {
