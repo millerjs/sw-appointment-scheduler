@@ -224,7 +224,7 @@ class Worker(object):
 
     def __init__(self, dt=5, granularity=10,
                  start_time="8:00", end_time="15:40"):
-        self._d = ['M', 'T', 'W', 'Th', 'F']
+        self._d = ['M', 'T', 'W', 'TH', 'F']
         self.dt = dt
         self.granularity = granularity
         self.days = {d: Day(start_time, end_time, dt) for d in self._d}
@@ -233,11 +233,11 @@ class Worker(object):
         dump = ""
         for day in self._d:
             dump += str(day) + '\n'
-            dump += self.days[day].dumps()
+            dump += self.days[day.upper()].dumps()
         return dump
 
     def next_avail_within(self, duration, day, req, data=None):
-        for interval in self.days[day].free:
+        for interval in self.days[day.upper()].free:
             if interval.contains_interval(req):
                 return get_iv(req.begin, req.begin + duration, data)
 
@@ -247,7 +247,7 @@ class Worker(object):
             avail = self.next_avail_within(
                 schedulable.minutes, interval.data, interval, schedulable)
             if avail:
-                return self.days[interval.data].schedule(avail)
+                return self.days[interval.data.upper()].schedule(avail)
 
         raise OverBookedError(
             'Could not book {} given options {}: existing schedule:\n{}'
