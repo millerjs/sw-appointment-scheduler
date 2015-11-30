@@ -55,8 +55,8 @@ class HighSchool(School):
                 3: get_iv('9:25', '10:25', data=data),
                 4: get_iv('10:30', '11:30', data=data),
                 5: get_iv('11:35', '12:35', data=data),
-                6: get_iv('12:40', '12:00', data=data),
-                7: get_iv('13:05', '12:30', data=data),
+                6: get_iv('12:40', '13:00', data=data),
+                7: get_iv('13:05', '13:30', data=data),
                 8: get_iv('13:35', '14:35', data=data),
                 9: get_iv('14:40', '15:40', data=data),
             }[int(period)]
@@ -71,6 +71,8 @@ class HighSchool(School):
                 5: get_iv('10:35', '11:15', data=data),
                 8: get_iv('11:20', '12:00', data=data),
                 9: get_iv('12:05', '12:45', data=data),
+                6: get_iv('12:45', '13:10', data=data),
+                7: get_iv('13:10', '13:35', data=data),
             }[int(period)]
         else:
             raise RuntimeError("Unknown day '{}'".format(day))
