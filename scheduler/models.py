@@ -183,6 +183,9 @@ class Student(object):
         elif option_re.match(text):
             period = option_re.match(text).group(1)
             days = ['m', 't', 'w', 'th', 'f']
+        elif isinstance(text, (str, unicode)) and text.lower() == 'lunch':
+            period = 'lunch'
+            days = ['m', 't', 'w', 'th', 'f']
         else:
             raise RuntimeError('Couldnt parse option {}'.format(text))
 
