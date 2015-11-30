@@ -3,6 +3,7 @@
 from scheduler.models import Worker, Student, HighSchool, MiddleSchool
 import csv
 import StringIO
+import argparse
 
 
 def parse_students(doc):
@@ -22,7 +23,12 @@ def parse_students(doc):
 
 if __name__ == "__main__":
 
-    with open('/Users/jmiller/Desktop/students.csv', 'r') as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", type=str, action="store",
+                        default='students.csv', help="path to csv")
+    args = parser.parse_args()
+
+    with open(args.file, 'r') as f:
         students = parse_students(f.read())
     worker = Worker()
     worker.schedule(students)
