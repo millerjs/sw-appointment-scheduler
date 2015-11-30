@@ -30,9 +30,12 @@ class School(object):
         if name not in self.groups:
             self.groups[name] = Group(self, name, minutes)
 
-        assert self.groups[name].minutes == minutes, (
-            "Two different 'minutes' provided for '{}', {}w != {}w"
-        ).format(name, self.groups[name].minutes, minutes)
+        if self.groups[name].minutes == minutes:
+            max_minutes = max(self.groups[name].minutes, minutes)
+            print ("Two different 'minutes' provided for '{}', {}w != {}w."
+                   "Choosing the greater one, {}").format(
+                       name, self.groups[name].minutes, minutes, max_minutes)
+            self.groups[name].minutes = max_minutes
 
         return self.groups[name]
 
