@@ -175,7 +175,7 @@ class Student(object):
             self.name, self.grade, self.group)
 
     def add_option(self, text):
-        if not text.strip():
+        if not text and not text.strip():
             return
         if option_day_re.match(text):
             period, day = option_day_re.match(text).groups()
